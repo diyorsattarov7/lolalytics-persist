@@ -1,0 +1,40 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+
+            - name: Build distributions
+              run: npm run build
+
+            - name: Package browser extension
+              run: |
+                  cd extension
+                  zip -r ../lolalytics-persist-extension.zip manifest.json content.js
+
+            - name: Create GitHub Release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh release create "${GITHUB_REF_NAME}" \
+                      userscript/lolalytics-persist.user.js \
+                      lolalytics-persist-extension.zip \
+                      --notes-file .github/release-notes.md \
+                      --verify-tag
