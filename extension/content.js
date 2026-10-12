@@ -1,11 +1,46 @@
+function createStorage() {
+    if (
+        typeof GM_getValue === "function" &&
+        typeof GM_setValue === "function"
+    ) {
+        return {
+            async get(key) {
+                return GM_getValue(key, {});
+            },
+
+            async set(key, value) {
+                GM_setValue(key, value);
+            }
+        };
+    }
+
+    const api = globalThis.browser?.storage?.local
+        ?? globalThis.chrome?.storage?.local;
+
+    if (!api) {
+        throw new Error("No supported storage API found");
+    }
+
+    return {
+        async get(key) {
+            const result = await api.get(key);
+            return result[key] ?? {};
+        },
+
+        async set(key, value) {
+            await api.set({
+                [key]: value
+            });
+        }
+    };
+}
+
+
 (function () {
     "use strict";
 
     const STORAGE_KEY = "lolalytics-persist";
     const FILTER_KEYS = ["tier", "region", "patch"];
-
-    const storage = globalThis.browser?.storage?.local
-        ?? globalThis.chrome.storage.local;
 
     function getFilters(url = location.href) {
         const params = new URL(url).searchParams;
@@ -22,28 +57,21 @@
         return filters;
     }
 
-    async function getSavedFilters() {
-        const result = await storage.get(STORAGE_KEY);
-        return result[STORAGE_KEY] ?? {};
-    }
-
     async function saveFilters() {
         const current = getFilters();
-        const saved = await getSavedFilters();
+        const saved = await storage.get(STORAGE_KEY);
 
         const updated = { ...saved, ...current };
 
         if (JSON.stringify(updated) !== JSON.stringify(saved)) {
-            await storage.set({
-                [STORAGE_KEY]: updated
-            });
+            await storage.set(STORAGE_KEY, updated);
 
             console.log("[Lolalytics Persist] Saved:", updated);
         }
     }
 
     async function restoreFilters() {
-        const saved = await getSavedFilters();
+        const saved = await storage.get(STORAGE_KEY);
         const url = new URL(location.href);
 
         let changed = false;
@@ -70,10 +98,8 @@
         if (Object.keys(current).length > 0) {
             await saveFilters();
             await restoreFilters();
-        } else {
-            if (await restoreFilters()) {
-                return;
-            }
+        } else if (await restoreFilters()) {
+            return;
         }
 
         let previousUrl = location.href;
@@ -87,6 +113,8 @@
             await saveFilters();
         }, 300);
     }
+
+    const storage = createStorage();
 
     initialize().catch(error => {
         console.error("[Lolalytics Persist] Error:", error);
