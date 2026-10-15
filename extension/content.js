@@ -35,12 +35,11 @@ function createStorage() {
     };
 }
 
-
 (function () {
     "use strict";
 
     const STORAGE_KEY = "lolalytics-persist";
-    const FILTER_KEYS = ["tier", "region", "patch"];
+    const FILTER_KEYS = ["lane", "tier", "region", "patch"];
 
     function getFilters(url = location.href) {
         const params = new URL(url).searchParams;
@@ -97,7 +96,9 @@ function createStorage() {
 
         if (Object.keys(current).length > 0) {
             await saveFilters();
-            await restoreFilters();
+            if (await restoreFilters()) {
+                return;
+            }
         } else if (await restoreFilters()) {
             return;
         }

@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         Lolalytics Persist
 // @namespace    https://github.com/diyorsattarov7
-// @version      0.1.6
+// @version      0.1.10
 // @description  Persist Lolalytics tier, region, and patch.
 // @match        *://lolalytics.com/*
 // @match        *://www.lolalytics.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @run-at       document-start
-// @downloadURL  https://raw.githubusercontent.com/diyorsattarov7/lolalytics-persist/main/userscript/lolalytics-persist.user.js
-// @updateURL    https://raw.githubusercontent.com/diyorsattarov7/lolalytics-persist/main/userscript/lolalytics-persist.user.js
+// @downloadURL  https://raw.githubusercontent.com/diyorsattarov7/lolalytics-persist/master/userscript/lolalytics-persist.user.js
+// @updateURL    https://raw.githubusercontent.com/diyorsattarov7/lolalytics-persist/master/userscript/lolalytics-persist.user.js
 // ==/UserScript==
 
 function createStorage() {
@@ -49,12 +49,11 @@ function createStorage() {
     };
 }
 
-
 (function () {
     "use strict";
 
     const STORAGE_KEY = "lolalytics-persist";
-    const FILTER_KEYS = ["tier", "region", "patch"];
+    const FILTER_KEYS = ["lane", "tier", "region", "patch"];
 
     function getFilters(url = location.href) {
         const params = new URL(url).searchParams;
@@ -111,7 +110,9 @@ function createStorage() {
 
         if (Object.keys(current).length > 0) {
             await saveFilters();
-            await restoreFilters();
+            if (await restoreFilters()) {
+                return;
+            }
         } else if (await restoreFilters()) {
             return;
         }
