@@ -4,12 +4,20 @@
     const STORAGE_KEY = "lolalytics-persist";
     const FILTER_KEYS = ["lane", "tier", "region", "patch"];
 
+    function isMatchupPage(url) {
+        return /^\/lol\/[^/]+\/vs\/[^/]+\//.test(url.pathname);
+    }
+
     function getFilters(url = location.href) {
-        const params = new URL(url).searchParams;
+        const parsed = new URL(url);
         const filters = {};
 
         for (const key of FILTER_KEYS) {
-            const value = params.get(key);
+            if (key === "region" && isMatchupPage(parsed)) {
+                continue;
+            }
+
+            const value = parsed.searchParams.get(key);
 
             if (value !== null) {
                 filters[key] = value;
@@ -36,9 +44,19 @@
         const saved = await storage.get(STORAGE_KEY);
         const url = new URL(location.href);
 
+        const matchup = isMatchupPage(url);
         let changed = false;
 
+        if (matchup && url.searchParams.has("region")) {
+            url.searchParams.delete("region");
+            changed = true;
+        }
+
         for (const key of FILTER_KEYS) {
+            if (key === "region" && matchup) {
+                continue;
+            }
+
             if (!url.searchParams.has(key) && saved[key]) {
                 url.searchParams.set(key, saved[key]);
                 changed = true;
@@ -55,26 +73,32 @@
     }
 
     async function initialize() {
-        const current = getFilters();
+        await saveFilters();
 
-        if (Object.keys(current).length > 0) {
-            await saveFilters();
-            if (await restoreFilters()) {
-                return;
-            }
-        } else if (await restoreFilters()) {
+        if (await restoreFilters()) {
             return;
         }
 
         let previousUrl = location.href;
+        let processing = false;
 
         setInterval(async () => {
-            if (location.href === previousUrl) {
+            if (processing || location.href === previousUrl) {
                 return;
             }
 
-            previousUrl = location.href;
-            await saveFilters();
+            processing = true;
+
+            try {
+                previousUrl = location.href;
+
+                await saveFilters();
+                await restoreFilters();
+            } catch (error) {
+                console.error("[Lolalytics Persist] Error:", error);
+            } finally {
+                processing = false;
+            }
         }, 300);
     }
 
