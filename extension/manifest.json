@@ -1,26 +1,26 @@
 {
-	"manifest_version": 3,
-	"name": "Lolalytics Persist",
-	"version": "0.1.10",
-	"description": "Automatically save and restore Lolalytics tier, region, and patch preferences.",
-	"permissions": [
-		"storage"
-	],
-	"content_scripts": [
-		{
-			"matches": [
-				"*://lolalytics.com/*",
-				"*://www.lolalytics.com/*"
-			],
-			"js": [
-				"content.js"
-			],
-			"run_at": "document_start"
-		}
-	],
-	"browser_specific_settings": {
-		"gecko": {
-			"id": "lolalytics-persist@diyorsattarov7.github.io"
-		}
-	}
+    "manifest_version": 3,
+    "name": "Lolalytics Persist",
+    "version": "0.1.10",
+    "description": "Automatically save and restore Lolalytics tier, region, and patch preferences.",
+    "permissions": [
+        "storage"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://lolalytics.com/*",
+                "*://www.lolalytics.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_start"
+        }
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "lolalytics-persist@diyorsattarov7.github.io"
+        }
+    }
 }
