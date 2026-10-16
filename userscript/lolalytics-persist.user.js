@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lolalytics Persist
 // @namespace    https://github.com/diyorsattarov7
-// @version      0.1.10
+// @version      0.1.11
 // @description  Persist Lolalytics tier, region, and patch.
 // @match        *://lolalytics.com/*
 // @match        *://www.lolalytics.com/*
@@ -59,12 +59,20 @@ function createStorage() {
         return /^\/lol\/[^/]+\/vs\/[^/]+\//.test(url.pathname);
     }
 
+    function isHomePage(url) {
+        return url.pathname === "/";
+    }
+
     function getFilters(url = location.href) {
         const parsed = new URL(url);
         const filters = {};
 
         for (const key of FILTER_KEYS) {
             if (key === "region" && isMatchupPage(parsed)) {
+                continue;
+            }
+
+            if (key === "lane" && isHomePage(parsed)) {
                 continue;
             }
 
@@ -80,7 +88,7 @@ function createStorage() {
 
     async function saveFilters() {
         const current = getFilters();
-        const saved = await storage.get(STORAGE_KEY);
+        const saved = (await storage.get(STORAGE_KEY)) ?? {};
 
         const updated = { ...saved, ...current };
 
@@ -92,10 +100,11 @@ function createStorage() {
     }
 
     async function restoreFilters() {
-        const saved = await storage.get(STORAGE_KEY);
+        const saved = (await storage.get(STORAGE_KEY)) ?? {};
         const url = new URL(location.href);
 
         const matchup = isMatchupPage(url);
+        const home = isHomePage(url);
         let changed = false;
 
         if (matchup && url.searchParams.has("region")) {
@@ -103,8 +112,17 @@ function createStorage() {
             changed = true;
         }
 
+        if (home && url.searchParams.has("lane")) {
+            url.searchParams.delete("lane");
+            changed = true;
+        }
+
         for (const key of FILTER_KEYS) {
             if (key === "region" && matchup) {
+                continue;
+            }
+
+            if (key === "lane" && home) {
                 continue;
             }
 
