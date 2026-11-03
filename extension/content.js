@@ -41,6 +41,11 @@ function createStorage() {
     const STORAGE_KEY = "lolalytics-persist";
     const FILTER_KEYS = ["lane", "tier", "region", "patch"];
 
+	function isTierListPage(url) {
+		return url.pathname === "/lol/tierlist/" ||
+			url.pathname === "/lol/tierlist";
+	}
+
     function isMatchupPage(url) {
         return /^\/lol\/[^/]+\/vs\/[^/]+\//.test(url.pathname);
     }
@@ -58,9 +63,10 @@ function createStorage() {
                 continue;
             }
 
-            if (key === "lane" && isHomePage(parsed)) {
-                continue;
-            }
+			if (key === "lane" &&
+				(isHomePage(parsed) || isTierListPage(parsed))) {
+				continue;
+			}
 
             const value = parsed.searchParams.get(key);
 
@@ -108,9 +114,9 @@ function createStorage() {
                 continue;
             }
 
-            if (key === "lane" && home) {
-                continue;
-            }
+			if (key === "lane" && (home || isTierListPage(url))) {
+				continue;
+			}
 
             if (!url.searchParams.has(key) && saved[key]) {
                 url.searchParams.set(key, saved[key]);
